@@ -56,8 +56,7 @@ defmodule Example.Embedding do
   end
 
   defn length_normalized_similarity(one, two, len1, len2) do
-    distance = Scholar.Metrics.Distance.cosine(one, two)
-    raw_similarity = Nx.subtract(Nx.tensor(1), distance)
+    raw_similarity = Nx.dot(normalize(one), normalize(two))
     length_factor = Nx.sqrt(Nx.min(len1, len2) / Nx.max(len1, len2))
     raw_similarity * length_factor
   end

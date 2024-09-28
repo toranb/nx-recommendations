@@ -53,15 +53,5 @@ defmodule Example.Recommendation do
     results = Example.History.search(result)
 
     results
-    |> Enum.each(fn history ->
-      vector = history.embedding |> Pgvector.to_tensor()
-      distance = Scholar.Metrics.Distance.cosine(vector, result)
-      similarity = Nx.subtract(Nx.tensor(1.0), distance)
-
-      similarity |> IO.inspect(label: "similarity")
-      history.movies |> IO.inspect(label: "movies")
-    end)
-
-    results
   end
 end
