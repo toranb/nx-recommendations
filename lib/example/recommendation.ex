@@ -53,5 +53,17 @@ defmodule Example.Recommendation do
     results = Example.History.search(result)
 
     results
+    |> Enum.each(fn history ->
+      vector = history.embedding |> Pgvector.to_tensor()
+
+      norm_one = Example.Embedding.normalize(vector)
+      norm_two = Example.Embedding.normalize(result)
+      similarity = Nx.dot(norm_one, norm_two)
+
+      similarity |> IO.inspect(label: "similarity")
+      history.movies |> IO.inspect(label: "movies")
+    end)
+
+    results
   end
 end
