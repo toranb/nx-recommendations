@@ -6,3 +6,7 @@ Start iex
   * Run `iex -S mix run` to get the iex shell
   * Run `Example.Recommendation.train()` to train for 10 epochs
   * Run `Example.Recommendation.guess("Batman")` to see movie recommendations
+
+  * Run `Example.Prediction.train()` to train model to find title from descriptions
+  * Run `Example.Prediction.predict_title("fights crime in Gotham")` to predict the movie title
+  * Run `Example.Prediction.predict_and_recommend("fights crime in Gotham")` to predict the title and like movies
