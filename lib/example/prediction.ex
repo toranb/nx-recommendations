@@ -4,7 +4,7 @@ defmodule Example.Prediction do
   def get_pairs() do
     "descriptions.csv"
     |> File.stream!()
-    |> DataParser.parse_stream()
+    |> DataParser.parse_stream(skip_headers: false)
     |> Stream.map(fn [title, desc] ->
       {desc, title}
     end)

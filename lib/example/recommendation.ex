@@ -4,7 +4,7 @@ defmodule Example.Recommendation do
   def get_history() do
     "history.csv"
     |> File.stream!()
-    |> ZataParser.parse_stream()
+    |> ZataParser.parse_stream(skip_headers: false)
     |> Stream.map(fn [movies] ->
       movies
     end)
@@ -24,7 +24,7 @@ defmodule Example.Recommendation do
 
     "history.csv"
     |> File.stream!()
-    |> ZataParser.parse_stream()
+    |> ZataParser.parse_stream(skip_headers: false)
     |> Stream.map(fn [movies] ->
       result = Example.Embedding.get_embedding(movies, vocabulary, model) |> Nx.tensor()
       result = result |> Example.Embedding.normalize()
