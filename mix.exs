@@ -32,8 +32,8 @@ defmodule Example.MixProject do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
-      {:nx, "~> 0.7.1"},
-      {:exla, "~> 0.7"},
+      {:nx, "~> 0.9"},
+      {:exla, "~> 0.9"},
       {:pgvector, "~> 0.3.0"},
       {:nimble_csv, "~> 1.2"},
       {:phoenix, "~> 1.7.11"},
