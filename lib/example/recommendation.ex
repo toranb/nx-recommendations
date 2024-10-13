@@ -22,7 +22,8 @@ defmodule Example.Recommendation do
     serialized_container = Nx.serialize(model)
     File.write!("#{Path.dirname(__ENV__.file)}/model_data", serialized_container)
 
-    "history.csv"
+    # "history.csv"
+    "datas.csv"
     |> File.stream!()
     |> ZataParser.parse_stream(skip_headers: false)
     |> Stream.map(fn [movies] ->

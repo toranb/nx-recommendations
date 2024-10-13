@@ -2,7 +2,7 @@ defmodule Example.Embedding do
   import Nx.Defn
 
   @pad_token "PAD"
-  @max_sequence_length 20
+  @max_sequence_length 65
 
   def create_vocabulary(examples) do
     examples
@@ -90,7 +90,7 @@ defmodule Example.Embedding do
   end
 
   def train(data, num_epochs, learning_rate) do
-    dims = 25
+    dims = 100
     vocabulary = create_vocabulary(data)
     examples = preprocess_examples(data, vocabulary)
     vocab_size = length(examples)

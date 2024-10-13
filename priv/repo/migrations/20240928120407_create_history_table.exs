@@ -4,7 +4,7 @@ defmodule Example.Repo.Migrations.CreateHistoryTable do
   def change do
     create table(:histories) do
       add :movies, :text, null: false
-      add :embedding, :vector, size: 25
+      add :embedding, :vector, size: 100
 
       timestamps()
     end
