@@ -34,6 +34,7 @@ defmodule Example.MixProject do
     [
       {:nx, "~> 0.9"},
       {:exla, "~> 0.9"},
+      {:bumblebee, "~> 0.6"},
       {:pgvector, "~> 0.3.0"},
       {:nimble_csv, "~> 1.2"},
       {:phoenix, "~> 1.7.11"},
