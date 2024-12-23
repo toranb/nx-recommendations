@@ -8,7 +8,7 @@ defmodule Example.Keywords do
   NimbleCSV.define(KeywordParser, separator: ",", escape: "\"")
 
   def go() do
-    num_epochs = 11
+    num_epochs = 12
     learning_rate = 0.02
     model = train(num_epochs, learning_rate)
     model_params = %{model: model}
@@ -170,23 +170,31 @@ defmodule Example.Keywords do
     initial_params = initialize_dense(input_dim: bert_vocab, hidden_dim: hidden_dim)
 
     Enum.reduce(1..num_epochs, initial_params, fn epoch, epoch_params ->
+      shuffled_examples = Enum.shuffle(preprocessed_examples)
+      batches = Enum.chunk_every(shuffled_examples, 16)
+
       {final_epoch_params, total_loss} =
-        Enum.reduce(preprocessed_examples, {epoch_params, 0.0}, fn {embeddings, target},
-                                                                   {current_params, acc_loss} ->
-          target_shape = elem(Nx.shape(target), 0)
-          labels = Nx.reshape(target, {target_shape, :auto})
-          {new_params, batch_loss} = update(current_params, embeddings, labels, learning_rate)
+        Enum.reduce(batches, {epoch_params, 0.0}, fn batch, {current_params, acc_loss} ->
+
+        {batch_params, batch_loss} =
+          Enum.reduce(batch, {current_params, 0.0}, fn {embeddings, target}, {params, loss} ->
+            target_shape = elem(Nx.shape(target), 0)
+            labels = Nx.reshape(target, {target_shape, :auto})
+            {new_params, example_loss} = update(params, embeddings, labels, learning_rate)
+            {new_params, loss + Nx.to_number(example_loss)}
+          end)
 
           # deallocate intermediate params
           if current_params != epoch_params do
             Nx.backend_deallocate(current_params)
           end
 
-          {new_params, acc_loss + Nx.to_number(batch_loss)}
+          avg_batch_loss = batch_loss / length(batch)
+          {batch_params, acc_loss + avg_batch_loss}
         end)
 
-      avg_loss = total_loss / length(preprocessed_examples)
-      IO.puts("Epoch #{epoch}, Loss: #{avg_loss}")
+      avg_epoch_loss = total_loss / length(batches)
+      IO.puts("Epoch #{epoch}, Avg Loss: #{avg_epoch_loss}")
 
       final_epoch_params
     end)
