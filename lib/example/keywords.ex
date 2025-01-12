@@ -4,6 +4,7 @@ defmodule Example.Keywords do
   @moduledoc false
 
   @model "google-bert/bert-base-uncased"
+  @max_length 38
 
   NimbleCSV.define(KeywordParser, separator: ",", escape: "\"")
 
@@ -79,6 +80,40 @@ defmodule Example.Keywords do
   end
 
   def prepare_data(examples, model_info, tokenizer) do
+    tokenizer =
+      Bumblebee.configure(tokenizer,
+        pad_direction: :right,
+        return_token_type_ids: false,
+        return_length: false
+      )
+
+    {:ok, config} = Bumblebee.load_generation_config({:hf, @model})
+    generation_config = Bumblebee.configure(config, max_new_tokens: @max_length)
+    serving = Example.Generation.get_text(model_info, tokenizer, generation_config, compile: [batch_size: 512, sequence_length: [@max_length]], defn_options: [compiler: EXLA])
+
+    texts = examples |> Enum.map(fn {text, _} -> text end)
+    %{hidden_states: embeddings, tokens: tokens} = Nx.Serving.run(serving, texts)
+
+    0..(elem(Nx.shape(embeddings), 0) - 1)
+    |> Enum.map(fn i ->
+      {_, keywords} = Enum.at(examples, i)
+      embeddings = Nx.slice(embeddings, [i, 0, 0], [1, @max_length, 768]) |> Nx.squeeze(axes: [0])
+      tokens = Nx.slice(tokens, [i, 0], [1, @max_length]) |> Nx.to_flat_list()
+      token_strings = tokens |> Enum.map(&Bumblebee.Tokenizer.decode(tokenizer, [&1]))
+
+      keyword_strings =
+        keywords
+        |> String.downcase()
+        |> String.split()
+        |> Enum.map(&String.trim/1)
+
+      labels = one_hot(token_strings, keyword_strings, tokenizer)
+
+      {token_strings, embeddings, Nx.tensor(labels)}
+    end)
+  end
+
+  def prepare_data_slower(examples, model_info, tokenizer) do
     %{model: model, params: params} = model_info
 
     examples
@@ -118,7 +153,7 @@ defmodule Example.Keywords do
     key_one = Nx.Random.key(42)
     key_two = Nx.Random.key(23)
     w1 = Nx.Random.normal_split(key_one, 0.0, 0.1, shape: {input_dim, hidden_dim}, type: :f16)
-    b1 = Nx.broadcast(0.0, {1})
+    b1 = Nx.broadcast(0.0, {hidden_dim})
     w2 = Nx.Random.normal_split(key_two, 0.0, 0.1, shape: {hidden_dim, 1}, type: :f16)
     b2 = Nx.broadcast(0.0, {1})
     {w1, b1, w2, b2}
@@ -135,10 +170,12 @@ defmodule Example.Keywords do
   end
 
   defn loss(params, embeddings, labels) do
+    max_value = 1.0e6
     probs = forward(params, embeddings)
     positive_term = labels * Nx.log(probs + 1.0e-10)
     negative_term = (1 - labels) * Nx.log(1 - probs + 1.0e-10)
-    -Nx.mean(positive_term + negative_term)
+    loss = -Nx.mean(positive_term + negative_term)
+    Nx.select(Nx.is_infinity(loss) or Nx.is_nan(loss), max_value, loss)
   end
 
   defn update({w1, b1, w2, b2} = params, embeddings, labels, learning_rate) do
@@ -284,7 +321,6 @@ defmodule Example.Keywords do
   @doc false
   def convert_tokens_to_string(tokens) do
     tokens
-    |> Enum.uniq()
     |> Enum.join(" ")
     |> String.replace(" ##", "")
     |> String.trim()
