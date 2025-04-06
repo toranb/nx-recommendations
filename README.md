@@ -13,3 +13,6 @@ Start iex
 
   * Run `Example.Keywords.go()` to train model to find keywords from ecomm question, keyword pairs
   * Run `Example.Keywords.evaluate()` to evaluate the keyword model
+
+  * Run `Example.Translate.go()` to train model to translate english to slang
+  * Run `Example.Translate.test("he has charisma")` to generate slang from the source
